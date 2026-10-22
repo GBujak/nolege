@@ -1,4 +1,4 @@
-package com.gbujak.nolege.config.db;
+package com.gbujak.nolege.config;
 
 import org.flywaydb.core.Flyway;
 import org.springframework.boot.jdbc.DataSourceBuilder;

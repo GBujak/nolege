@@ -45,3 +45,42 @@ dependencyManagement {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+def frontendDir = layout.projectDirectory.dir('frontend')
+def frontendDistDir = frontendDir.dir('dist')
+def pnpm = providers.gradleProperty('pnpmCommand').orElse('pnpm')
+
+tasks.register('pnpmInstall', Exec) {
+	group = 'frontend'
+	description = 'Installs frontend dependencies with pnpm.'
+	workingDir frontendDir.asFile
+	commandLine pnpm.get(), 'install', '--frozen-lockfile'
+	inputs.files(frontendDir.file('package.json'), frontendDir.file('pnpm-lock.yaml'))
+	outputs.dir(frontendDir.dir('node_modules'))
+}
+
+tasks.register('buildFrontend', Exec) {
+	group = 'frontend'
+	description = 'Builds the frontend with Vite.'
+	dependsOn 'pnpmInstall'
+	workingDir frontendDir.asFile
+	commandLine pnpm.get(), 'run', 'build'
+	inputs.dir(frontendDir.dir('src'))
+	inputs.files(
+		frontendDir.file('package.json'),
+		frontendDir.file('pnpm-lock.yaml'),
+		frontendDir.file('vite.config.ts'),
+		frontendDir.file('index.html'),
+		frontendDir.file('tsconfig.json'),
+		frontendDir.file('tsconfig.app.json'),
+		frontendDir.file('tsconfig.node.json')
+	)
+	outputs.dir(frontendDistDir)
+}
+
+tasks.named('processResources') {
+	dependsOn 'buildFrontend'
+	from(frontendDistDir) {
+		into 'static'
+	}
+}
